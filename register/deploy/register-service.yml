@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: register-service
+  labels:
+    app: register-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: register-service
+  template:
+    metadata:
+      labels:
+        app: register-service
+    spec:
+      imagePullSecrets:
+      - name: registry-secret
+      containers:
+      - name: register-service
+        image: register-service8:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8090
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: native
+        - name: VERSION
+          value: 'K8S_TIMESTAMP'
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+                name: mysqlbatch-user-pass
+                key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+                name: mysqlbatch-user-pass
+                key: password
+        - name: SPRING_DATASOURCE_URL
+          valueFrom:
+            secretKeyRef:
+                    name: mysqlbatch-db-url
+                    key: url
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: register-service
+  labels:
+    app: register-service
+
+spec:
+  type: NodePort
+  ports:
+  # the port that this service should serve on
+  - port: 8090
+    targetPort: 8090
+    nodePort: 31090
+  selector:
+    app: register-service

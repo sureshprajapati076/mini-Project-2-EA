@@ -1,0 +1,10 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: catalog-service
+  labels:
+    app: catalog-service
+  namespace: default
+data:
+  application.yml: |-
+    endpoints.trace.sensitive: false

@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  labels:
+    app: payment-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      imagePullSecrets:
+        - name: registry-secret
+      containers:
+        - name: payment-service
+          image: paymentfinalo-servicetestmaybe2:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8093
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: native
+            - name: VERSION
+              value: 'K8S_TIMESTAMP'
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlbatch-user-pass
+                  key: username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlbatch-user-pass
+                  key: password
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlbatch-db-url
+                  key: url
+            - name: paypal
+              valueFrom:
+                  secretKeyRef:
+                    name: paypal1
+                    key: apiToken
+            - name: mastercard
+              valueFrom:
+                  secretKeyRef:
+                    name: mastercard1
+                    key: apiToken
+            - name: STOCK_THRESH
+              valueFrom:
+                  configMapKeyRef:
+                    name: stock-threshold1
+                    key: thresh1
+            - name: abcde
+              valueFrom:
+                  configMapKeyRef:
+                    name: paypal-config
+                    key: name
+            - name: fghes
+              valueFrom:
+                  configMapKeyRef:
+                    name: master-card
+                    key: name
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  labels:
+    app: payment-service
+
+spec:
+  type: NodePort
+  ports:
+    # the port that this service should serve on
+    - port: 8093
+      targetPort: 8093
+      nodePort: 31097
+  selector:
+    app: payment-service
